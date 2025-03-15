@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync/atomic"
 )
 
@@ -49,33 +50,37 @@ func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&params)
 
 	if err != nil {
-		log.Printf("Error decoding parameters: %s", err)
-		w.WriteHeader(500)
+		respondWithError(w, 500, "server error")
 		return
 	}
 
 	if len(params.Body) > 140 {
-		w.WriteHeader(http.StatusBadRequest)
+		respondWithError(w, 400, "Bad request")
 		return
 	}
 
+	stringSplit :=  strings.Fields(params.Body)
+	wordsToCensor := []string{"kerfuffle", "sharbert", "fornax" }
+	censorMap :=	 make(map[string]bool)
+	for _, word := range wordsToCensor {
+		censorMap[word] = true
+	}
+	
+	for i, word := range stringSplit {
+		if censorMap[strings.ToLower(word)] {
+			stringSplit[i] = "****"
+		}
+	}
+
 	type responseVal struct {
-		Valid string `json:"valid"`
+		Cleaned_body string `json:"cleaned_body"`
 	}
+	
+	data, _ := json.Marshal(responseVal{
+		Cleaned_body: strings.Join(stringSplit, " "),
+	})
 
-	respBody := responseVal{
-		Valid: "true",
-	}
-
-
-	dat, err := json.Marshal(respBody)
-	if err != nil {
-			log.Printf("Error marshalling JSON: %s", err)
-			w.WriteHeader(500)
-			return
-	}
-	w.WriteHeader(200)
-	w.Write(dat)
+	respondWithJSON(w, 200, data)
 }
 
 func readinessHandler(w http.ResponseWriter, r *http.Request) {
@@ -105,3 +110,22 @@ func (cfg *apiConfig) resetHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hits reset to 0"))
 }
 
+func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	if err := json.NewEncoder(w).Encode(payload); err != nil {
+		// Handle error if JSON encoding fails
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func respondWithError(w http.ResponseWriter, code int, msg string) {
+	w.WriteHeader(code)
+	if err := json.NewEncoder(w).Encode(struct {
+		Message string `json:"message"`
+	}{Message: msg}); err != nil {
+		log.Printf("Error marshalling JSON: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
