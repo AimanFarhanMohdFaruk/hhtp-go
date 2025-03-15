@@ -65,7 +65,6 @@ func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
 	for _, word := range wordsToCensor {
 		censorMap[word] = true
 	}
-	
 	for i, word := range stringSplit {
 		if censorMap[strings.ToLower(word)] {
 			stringSplit[i] = "****"
@@ -75,12 +74,11 @@ func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
 	type responseVal struct {
 		Cleaned_body string `json:"cleaned_body"`
 	}
-	
-	data, _ := json.Marshal(responseVal{
+	respBody := responseVal{
 		Cleaned_body: strings.Join(stringSplit, " "),
-	})
+	}
 
-	respondWithJSON(w, 200, data)
+	respondWithJSON(w, 200, respBody)
 }
 
 func readinessHandler(w http.ResponseWriter, r *http.Request) {
@@ -110,22 +108,18 @@ func (cfg *apiConfig) resetHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hits reset to 0"))
 }
 
-func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	if err := json.NewEncoder(w).Encode(payload); err != nil {
-		// Handle error if JSON encoding fails
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) error {
+	response, err := json.Marshal(payload)
+	if err != nil {
+			return err
 	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.WriteHeader(code)
+	w.Write(response)
+	return nil
 }
 
-func respondWithError(w http.ResponseWriter, code int, msg string) {
-	w.WriteHeader(code)
-	if err := json.NewEncoder(w).Encode(struct {
-		Message string `json:"message"`
-	}{Message: msg}); err != nil {
-		log.Printf("Error marshalling JSON: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-	}
+func respondWithError(w http.ResponseWriter, code int, msg string) error {
+	return respondWithJSON(w, code, map[string]string{"error": msg})
 }
