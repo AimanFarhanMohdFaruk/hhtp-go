@@ -3,10 +3,8 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"sync/atomic"
 
@@ -21,9 +19,9 @@ type apiConfig struct {
 
 func main() {
 	mux := http.NewServeMux()
-	dbUrl := os.Getenv("DB_URL")
-
-	db, err := sql.Open("postgres", dbUrl)
+	
+	
+	db, err := sql.Open("postgres", "user=aimanfarhan dbname=chirpy sslmode=disable")
 	if err != nil {
 		log.Fatal("DB Connection failed")
 	}
@@ -33,12 +31,14 @@ func main() {
 		fileServerHits: atomic.Int32{},
 		db: *dbQueries,
 	}
-	
+
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("GET /api/healthz", readinessHandler)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.metricsHandler)
 	mux.HandleFunc("POST /admin/reset", apiCfg.resetHandler)
 	mux.HandleFunc("POST /api/validate_chirp", validateChirpHandler)
+
+	mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
 
 	server := http.Server{
 		Addr: ":8080",
@@ -95,33 +95,6 @@ func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, 200, respBody)
-}
-
-func readinessHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(http.StatusText(http.StatusOK)))
-}
-
-func (cfg *apiConfig) metricsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf(
-		`
-		<html>
-			<body>
-				<h1>Welcome, Chirpy Admin</h1>
-				<p>Chirpy has been visited %d times!</p>
-			</body>
-		</html>
-		`, cfg.fileServerHits.Load(),
-	)))
-}
-
-func (cfg *apiConfig) resetHandler(w http.ResponseWriter, r *http.Request) {
-	cfg.fileServerHits.Store(0)
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Hits reset to 0"))
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) error {
