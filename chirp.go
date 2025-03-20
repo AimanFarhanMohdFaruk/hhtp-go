@@ -8,8 +8,6 @@ import (
 	"github.com/google/uuid"
 )
 
-
-
 func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
@@ -36,11 +34,35 @@ func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, database.Chirp{
-		ID: chirp.ID,
-		Body: chirp.Body,
-		UserID: chirp.UserID,
-		CreatedAt: chirp.CreatedAt,
-		UpdatedAt: chirp.UpdatedAt,
-	})
+	respondWithJSON(w, http.StatusCreated, chirp)
+}
+
+func (cfg *apiConfig) getChirpsHandler(w http.ResponseWriter, r *http.Request) {
+	chirpList, err := cfg.db.ListChirps(r.Context())
+	if err != nil {
+		respondWithError(w, 400, "Error fetching chirps")
+	}
+	respondWithJSON(w, 200, chirpList)
+}
+
+func (cfg *apiConfig) getChirpHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+			respondWithError(w, http.StatusBadRequest, "Misisng Chirp ID")
+			return
+	}
+	
+	parseUUID, err := uuid.Parse(id)
+	if err !=  nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid Chirp ID")
+		return
+	}
+
+	chirp, err := cfg.db.GetChirp(r.Context(), parseUUID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid product ID")
+		return
+	}
+
+	respondWithJSON(w, 200, chirp)
 }

@@ -43,6 +43,8 @@ func main() {
 
 	// chirp handlers
 	mux.HandleFunc("POST /api/chirps", apiCfg.createChirpHandler)
+	mux.HandleFunc("GET /api/chirps", apiCfg.getChirpsHandler)
+	mux.HandleFunc("GET /api/chirps/{id}", apiCfg.getChirpHandler)
 
 	server := http.Server{
 		Addr: ":8080",

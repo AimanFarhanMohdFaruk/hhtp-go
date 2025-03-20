@@ -11,16 +11,16 @@ import (
 )
 
 type Chirp struct {
-	ID        uuid.UUID
-	Body      string
-	UserID    uuid.UUID
-	CreatedAt sql.NullTime
-	UpdatedAt sql.NullTime
+	ID        uuid.UUID    `json:"id"`
+	Body      string       `json:"body"`
+	UserID    uuid.UUID    `json:"user_id"`
+	CreatedAt sql.NullTime `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
 }
 
 type User struct {
-	ID        uuid.UUID
-	Email     string
-	CreatedAt sql.NullTime
-	UpdatedAt sql.NullTime
+	ID        uuid.UUID    `json:"id"`
+	Email     string       `json:"email"`
+	CreatedAt sql.NullTime `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
 }

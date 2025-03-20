@@ -99,8 +99,8 @@ WHERE id = $1
 `
 
 type UpdateUserParams struct {
-	ID    uuid.UUID
-	Email string
+	ID    uuid.UUID `json:"id"`
+	Email string    `json:"email"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {

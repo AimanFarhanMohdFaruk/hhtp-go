@@ -6,5 +6,4 @@ sql:
     gen:
       go:
         out: "internal/database"
-        options:
-          emit_json_tags: true
+        emit_json_tags: true
