@@ -31,25 +31,10 @@ func main() {
 	}
 
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
-	mux.HandleFunc("GET /api/healthz", readinessHandler)
-	mux.HandleFunc("GET /admin/metrics", apiCfg.metricsHandler)
-	mux.HandleFunc("POST /admin/reset", apiCfg.resetHandler)
-	mux.HandleFunc("POST /api/validate_chirp", validateChirpHandler)
-
-	// user handlers
-	mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
-
-	// auth
-	mux.HandleFunc("POST /api/login", apiCfg.loginHandler)
-
-	// chirp handlers
-	mux.HandleFunc("POST /api/chirps", apiCfg.createChirpHandler)
-	mux.HandleFunc("GET /api/chirps", apiCfg.getChirpsHandler)
-	mux.HandleFunc("GET /api/chirps/{id}", apiCfg.getChirpHandler)
 
 	server := http.Server{
 		Addr: ":8080",
-		Handler: mux,	
+		Handler: apiCfg.routes(),	
 	}
 	log.Printf("Serving files from %s on port: %s\n", ".", ":8080")
 	log.Fatal(server.ListenAndServe())
