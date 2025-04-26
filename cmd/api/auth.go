@@ -8,7 +8,7 @@ import (
 	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/database"
 )
 
-func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	type parameters struct {
 		Email string `json:"email"`
@@ -20,26 +20,23 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request) 
 		respondWithError(w, 400, err.Error())
 		return
 	}
-	
-	hashedPassword, err := auth.HashPassword(params.Password)
-	if err != nil {
-		respondWithError(w, 401, err.Error())
-		return
-	}
 
-	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
-		Email: params.Email,
-		HashedPassword: hashedPassword,
-	})
+	user, err := cfg.db.GetUserByEmail(r.Context(), params.Email)
 	if err != nil {
 		respondWithError(w, 400, err.Error())
+		return
+	}
+	
+	err = auth.CheckPasswordHash(user.HashedPassword, params.Password)
+	if err != nil {
+		respondWithError(w, 401, "invalid request")
 		return
 	}
 
 	respondWithJSON(w, http.StatusCreated, database.User{
 		ID: user.ID,
-		Email: user.Email,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
+		Email: user.Email,
 	})
 }
