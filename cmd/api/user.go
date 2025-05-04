@@ -23,7 +23,7 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request) 
 	
 	hashedPassword, err := auth.HashPassword(params.Password)
 	if err != nil {
-		respondWithError(w, 401, err.Error())
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 

@@ -5,18 +5,25 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"sync/atomic"
 
 	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/database"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
 type apiConfig struct {
 	fileServerHits atomic.Int32
 	db database.Queries
+	jwtSecret string
 }
 
 func main() {
+	err := godotenv.Load()
+  if err != nil {
+    log.Fatal("Error loading .env file")
+  }
 	mux := http.NewServeMux()
 
 	db, err := sql.Open("postgres", "user=aimanfarhan dbname=chirpy sslmode=disable")
@@ -24,10 +31,16 @@ func main() {
 		log.Fatal("DB Connection failed")
 	}
 	dbQueries := database.New(db)
+	jwtSecret := os.Getenv("JWT_SECRET")
+
+	if jwtSecret == "" {
+		log.Fatal("Missing env variable: JWT_SECRET")
+	}
 
 	apiCfg := apiConfig{
 		fileServerHits: atomic.Int32{},
 		db: *dbQueries,
+		jwtSecret: jwtSecret,
 	}
 
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
@@ -46,6 +59,25 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 		next.ServeHTTP(w,r)
 	})
 }
+
+// func (cfg *apiConfig) authRequired(next http.HandlerFunc) http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		token, err := auth.GetBearerToken(r.Header)
+
+// 		if err != nil {
+// 			http.Error(w, err.Error(), http.StatusUnauthorized)
+// 			return
+// 		}
+
+// 		_, err = auth.ValidateJWT(token, cfg.jwtSecret)
+
+// 		if err != nil {
+// 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+// 			return
+// 		}
+// 		next.ServeHTTP(w,r)
+// 	})
+// }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) error {
 	response, err := json.Marshal(payload)

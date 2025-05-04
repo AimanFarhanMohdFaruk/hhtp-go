@@ -18,10 +18,9 @@ func (cfg *apiConfig) routes() *httprouter.Router{
 
 	router.HandlerFunc(http.MethodPost,"/api/login", cfg.loginHandler)
 
-	router.HandlerFunc(http.MethodPost,"/api/chirps", cfg.createChirpHandler)
+	router.HandlerFunc(http.MethodPost, "/api/chirps", cfg.createChirpHandler)
 	router.HandlerFunc(http.MethodGet,"/api/chirps", cfg.getChirpsHandler)
 	router.HandlerFunc(http.MethodGet,"/api/chirps/:id", cfg.getChirpHandler)
 
 	return router
 }
-

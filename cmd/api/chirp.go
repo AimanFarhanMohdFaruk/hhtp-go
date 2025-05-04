@@ -5,20 +5,31 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/auth"
 	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/database"
 	"github.com/google/uuid"
 )
 
 func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request) {
+	token, err := auth.GetBearerToken(r.Header)
+
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+	}
+
+	userId, err := auth.ValidateJWT(token, cfg.jwtSecret)
+
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+	}
 	decoder := json.NewDecoder(r.Body)
 
 	type requestParams struct {
 		Body string `json:"body"`
-		UserID uuid.UUID `json:"user_id"`
 	}
 
 	params := requestParams{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 		
 	if err != nil {
 		respondWithError(w, 400, err.Error())
@@ -27,7 +38,7 @@ func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request)
 
 	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body: params.Body,
-		UserID: params.UserID,
+		UserID: userId,
 	})
 
 	if err != nil {

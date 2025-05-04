@@ -2,7 +2,6 @@ package auth
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -64,12 +63,12 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 		return []byte(tokenSecret), nil
 	}, jwt.WithLeeway(5*time.Second))
 	if err != nil {
-		log.Fatal(err)
+		return uuid.Nil, err
 	}
 
 	subject, err := token.Claims.GetSubject()
 	if err != nil {
-		log.Fatal(err)
+		return uuid.Nil, err
 	}
 
 	return uuid.MustParse(subject), nil

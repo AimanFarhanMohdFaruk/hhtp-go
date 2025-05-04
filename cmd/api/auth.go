@@ -1,11 +1,13 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/auth"
-	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/database"
+	"github.com/google/uuid"
 )
 
 func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -33,10 +35,25 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, database.User{
+	jwtToken, err := auth.MakeJWT(user.ID, cfg.jwtSecret, time.Hour)
+	if err != nil {
+		respondWithError(w, 401, "invalid request")
+		return
+	}
+
+	type loginResponse struct{
+		ID uuid.UUID
+		CreatedAt sql.NullTime
+		UpdatedAt sql.NullTime
+		Email string
+		Token string
+	}
+
+	respondWithJSON(w, http.StatusOK, loginResponse{
 		ID: user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		Email: user.Email,
+		Token: jwtToken,
 	})
 }
