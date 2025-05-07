@@ -9,7 +9,7 @@ import (
 func (cfg *apiConfig) routes() *httprouter.Router{
 	router := httprouter.New()
 	
-	router.HandlerFunc(http.MethodGet, "/api/healthz", readinessHandler)
+	router.HandlerFunc(http.MethodGet, "/api/healthz", cfg.logHandler(readinessHandler))
 	router.HandlerFunc(http.MethodGet,"/admin/metrics", cfg.metricsHandler)
 	
 	router.HandlerFunc(http.MethodPost,"/admin/reset", cfg.resetHandler)

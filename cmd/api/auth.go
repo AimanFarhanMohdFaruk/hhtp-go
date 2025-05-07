@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/auth"
+	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/database"
 	"github.com/google/uuid"
 )
 
@@ -35,9 +36,25 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwtToken, err := auth.MakeJWT(user.ID, cfg.jwtSecret, time.Hour)
+	jwtToken, err := auth.MakeJWT(user.ID, cfg.jwtSecret)
 	if err != nil {
 		respondWithError(w, 401, "invalid request")
+		return
+	}
+
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return
+	}
+
+	_, err = cfg.db.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		Token: refreshToken,
+		UserID: user.ID,
+		ExpiresAt: time.Now().Add(time.Hour * 60),
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -47,6 +64,7 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt sql.NullTime
 		Email string
 		Token string
+		RefreshToken string
 	}
 
 	respondWithJSON(w, http.StatusOK, loginResponse{
@@ -55,5 +73,6 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: user.UpdatedAt,
 		Email: user.Email,
 		Token: jwtToken,
+		RefreshToken: refreshToken,
 	})
 }

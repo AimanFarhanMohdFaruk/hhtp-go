@@ -3,8 +3,11 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"net/http/httptest"
+	"net/http/httputil"
 	"os"
 	"sync/atomic"
 
@@ -47,8 +50,9 @@ func main() {
 
 	server := http.Server{
 		Addr: ":8080",
-		Handler: apiCfg.routes(),	
+		Handler: apiCfg.routes(),
 	}
+	
 	log.Printf("Serving files from %s on port: %s\n", ".", ":8080")
 	log.Fatal(server.ListenAndServe())
 }
@@ -58,6 +62,20 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 		cfg.fileServerHits.Add(1)
 		next.ServeHTTP(w,r)
 	})
+}
+
+func (cfg *apiConfig) logHandler(fn http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		x, err := httputil.DumpRequest(r, true)
+		if err != nil {
+				http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
+				return
+		}
+		log.Printf("%q", x)
+		rec := httptest.NewRecorder()
+		fn(rec, r)
+		log.Printf("%q", rec.Body)
+	}
 }
 
 // func (cfg *apiConfig) authRequired(next http.HandlerFunc) http.Handler {

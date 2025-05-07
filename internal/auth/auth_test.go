@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/auth"
 	"github.com/google/uuid"
@@ -13,12 +12,20 @@ import (
 func TestMakeJWT(t *testing.T) {
 	userId := uuid.New()
 	secret := "mysecretkey"
-	testJWT, err := auth.MakeJWT(userId, secret, time.Hour)
+	testJWT, err := auth.MakeJWT(userId, secret)
 	if err != nil {
 		t.Fatalf("failed to create JWT: %v", err)
 	}
 	
 	t.Logf("Generated JWT: %s", testJWT)
+}
+
+func TestMakeRefreshToken(t *testing.T) {
+	generateRefreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		t.Fatalf("failed to create refresh token: %v", err)
+	}
+	t.Logf("Generated refresh token: %s", generateRefreshToken)
 }
 
 func TestGetBearerToken(t *testing.T) {
@@ -40,7 +47,7 @@ func TestGetBearerToken(t *testing.T) {
 func TestValidateJWT(t *testing.T) {
 	userId := uuid.New()
 	secret := "mysecretkey"
-	testJWT, err := auth.MakeJWT(userId, secret, time.Hour)
+	testJWT, err := auth.MakeJWT(userId, secret)
 	if err != nil {
 		t.Fatalf("failed to create JWT: %v", err)
 	}
