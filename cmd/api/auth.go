@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/auth"
@@ -59,12 +60,12 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type loginResponse struct{
-		ID uuid.UUID
-		CreatedAt sql.NullTime
-		UpdatedAt sql.NullTime
-		Email string
-		Token string
-		RefreshToken string
+		ID uuid.UUID `json:"id"`
+		CreatedAt sql.NullTime `json:"created_at"`
+		UpdatedAt sql.NullTime `json:"updated_at"`
+		Email string `json:"email"`
+		Token string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	respondWithJSON(w, http.StatusOK, loginResponse{
@@ -75,4 +76,62 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		Token: jwtToken,
 		RefreshToken: refreshToken,
 	})
+}
+
+func (cfg *apiConfig) refreshTokenHandler(w http.ResponseWriter, r *http.Request) {
+	refreshToken, err := auth.GetBearerToken(r.Header)
+	
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	existingRefreshToken, err := cfg.db.GetRefreshToken(r.Context(), refreshToken)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+		return
+	}
+
+	if existingRefreshToken.ExpiresAt.Before(time.Now()) {
+		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+		return
+	}
+
+	if existingRefreshToken.RevokedAt.Valid {
+		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+		return
+	}
+
+	newToken, err := auth.MakeJWT(existingRefreshToken.UserID, os.Getenv("JWT_SECRET"))
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	type refreshTokenResponse struct{
+		Token string `json:"token"`
+	}
+
+	respondWithJSON(w, http.StatusOK, refreshTokenResponse{Token: newToken})
+}
+
+func (cfg *apiConfig) revokeRefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
+	refreshToken, err := auth.GetBearerToken(r.Header)
+
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = cfg.db.UpdateRefreshToken(r.Context(), database.UpdateRefreshTokenParams{
+		Token: refreshToken,
+		RevokedAt: sql.NullTime{Time: time.Now(), Valid: true},
+	})
+
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

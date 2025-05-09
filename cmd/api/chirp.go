@@ -15,12 +15,14 @@ func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request)
 
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+		return
 	}
 
 	userId, err := auth.ValidateJWT(token, cfg.jwtSecret)
 
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+		return
 	}
 	decoder := json.NewDecoder(r.Body)
 
