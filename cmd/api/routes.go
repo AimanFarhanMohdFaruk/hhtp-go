@@ -26,5 +26,7 @@ func (cfg *apiConfig) routes() *httprouter.Router{
 	router.GET("/api/chirps/:id", cfg.getChirpHandler)
 	router.DELETE("/api/chirps/:id", cfg.deleteChirpHandler)
 
+	router.POST("/api/polka/webhooks", cfg.polkaWebhookHandler)
+
 	return router
 }

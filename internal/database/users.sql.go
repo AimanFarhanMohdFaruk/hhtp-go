@@ -17,7 +17,7 @@ INSERT INTO users (
 ) VALUES (
   $1, $2
 )
-RETURNING id, email, created_at, updated_at, hashed_password
+RETURNING id, email, created_at, updated_at, hashed_password, is_chirpy_red
 `
 
 type CreateUserParams struct {
@@ -34,6 +34,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.HashedPassword,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
@@ -49,7 +50,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) error {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, email, created_at, updated_at, hashed_password FROM users
+SELECT id, email, created_at, updated_at, hashed_password, is_chirpy_red FROM users
 WHERE id = $1 LIMIT 1
 `
 
@@ -62,12 +63,13 @@ func (q *Queries) GetUser(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.HashedPassword,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, created_at, updated_at, hashed_password FROM users
+SELECT id, email, created_at, updated_at, hashed_password, is_chirpy_red FROM users
 WHERE email = $1 LIMIT 1
 `
 
@@ -80,12 +82,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.HashedPassword,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, email, created_at, updated_at, hashed_password FROM users
+SELECT id, email, created_at, updated_at, hashed_password, is_chirpy_red FROM users
 ORDER BY email
 `
 
@@ -104,6 +107,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.HashedPassword,
+			&i.IsChirpyRed,
 		); err != nil {
 			return nil, err
 		}
@@ -131,5 +135,20 @@ type UpdateUserParams struct {
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 	_, err := q.db.ExecContext(ctx, updateUser, arg.ID, arg.Email, arg.HashedPassword)
+	return err
+}
+
+const updateUserChirpyRed = `-- name: UpdateUserChirpyRed :exec
+UPDATE users set is_chirpy_red = $2
+where id = $1
+`
+
+type UpdateUserChirpyRedParams struct {
+	ID          uuid.UUID `json:"id"`
+	IsChirpyRed bool      `json:"is_chirpy_red"`
+}
+
+func (q *Queries) UpdateUserChirpyRed(ctx context.Context, arg UpdateUserChirpyRedParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserChirpyRed, arg.ID, arg.IsChirpyRed)
 	return err
 }

@@ -22,6 +22,10 @@ RETURNING *;
 UPDATE users set email = $2, hashed_password = $3
 WHERE id = $1;
 
+-- name: UpdateUserChirpyRed :exec
+UPDATE users set is_chirpy_red = $2
+where id = $1;
+
 -- name: DeleteUser :exec
 DELETE FROM users
 WHERE id = $1;
