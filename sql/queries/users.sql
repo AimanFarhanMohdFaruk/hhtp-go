@@ -19,8 +19,7 @@ INSERT INTO users (
 RETURNING *;
 
 -- name: UpdateUser :exec
-UPDATE users
-  set email = $2
+UPDATE users set email = $2, hashed_password = $3
 WHERE id = $1;
 
 -- name: DeleteUser :exec

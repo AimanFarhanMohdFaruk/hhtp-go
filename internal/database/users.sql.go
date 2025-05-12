@@ -119,17 +119,17 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 }
 
 const updateUser = `-- name: UpdateUser :exec
-UPDATE users
-  set email = $2
+UPDATE users set email = $2, hashed_password = $3
 WHERE id = $1
 `
 
 type UpdateUserParams struct {
-	ID    uuid.UUID `json:"id"`
-	Email string    `json:"email"`
+	ID             uuid.UUID `json:"id"`
+	Email          string    `json:"email"`
+	HashedPassword string    `json:"hashed_password"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
-	_, err := q.db.ExecContext(ctx, updateUser, arg.ID, arg.Email)
+	_, err := q.db.ExecContext(ctx, updateUser, arg.ID, arg.Email, arg.HashedPassword)
 	return err
 }

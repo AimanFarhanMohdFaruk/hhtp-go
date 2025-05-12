@@ -15,6 +15,7 @@ func (cfg *apiConfig) routes() *httprouter.Router{
 	router.HandlerFunc(http.MethodPost,"/admin/reset", cfg.resetHandler)
 	router.HandlerFunc(http.MethodPost,"/api/validate_chirp", validateChirpHandler)
 	router.HandlerFunc(http.MethodPost,"/api/users", cfg.createUserHandler)
+	router.HandlerFunc(http.MethodPut, "/api/users", cfg.updateUserHandler)
 
 	router.HandlerFunc(http.MethodPost,"/api/login", cfg.loginHandler)
 	router.HandlerFunc(http.MethodPost,"/api/refresh", cfg.refreshTokenHandler)
