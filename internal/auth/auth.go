@@ -100,3 +100,19 @@ func AuthenticateUser(r *http.Request, jwtSecret string) (uuid.UUID, error) {
 	
 	return userId, nil
 }
+
+func GetPolkaAPIKey(headers http.Header) (string, error) {
+	authHeader := headers.Get("Authorization")
+
+	if authHeader == "" {
+		return "", errors.New("missing authorization header")
+	}
+
+	splitHeaders := strings.Split(authHeader, " ")
+
+	if splitHeaders[0] != "ApiKey" {
+		return "", errors.New("invalid authorization format")
+	}
+	
+	return splitHeaders[1], nil
+}

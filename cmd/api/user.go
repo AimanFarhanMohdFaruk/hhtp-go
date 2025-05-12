@@ -46,12 +46,7 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request, 
 }
 
 func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	token, err := auth.GetBearerToken(r.Header)
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
-		return
-	}
-	userId, err := auth.ValidateJWT(token, cfg.jwtSecret)
+	userId, err := auth.AuthenticateUser(r, cfg.jwtSecret)
 
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))

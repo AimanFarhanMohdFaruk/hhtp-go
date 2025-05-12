@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/auth"
 	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/database"
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
@@ -14,13 +15,24 @@ type webhookData struct {
 }
 
 func (cfg *apiConfig) polkaWebhookHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	polkaAPIKey, err  := auth.GetPolkaAPIKey(r.Header)
+	println(polkaAPIKey)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+		return
+	}
+	if polkaAPIKey != cfg.polkaAPIKey {
+		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	type parameters struct {
 		Event string `json:"event"`
 		Data webhookData `json:"data"`
 	}
 	params := parameters{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, 400, err.Error())
 		return

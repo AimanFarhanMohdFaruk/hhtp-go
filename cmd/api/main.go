@@ -20,6 +20,7 @@ type apiConfig struct {
 	fileServerHits atomic.Int32
 	db database.Queries
 	jwtSecret string
+	polkaAPIKey string
 }
 
 func main() {
@@ -35,8 +36,9 @@ func main() {
 	}
 	dbQueries := database.New(db)
 	jwtSecret := os.Getenv("JWT_SECRET")
+	polkaAPIKey := os.Getenv("POLKA_KEY")
 
-	if jwtSecret == "" {
+	if jwtSecret == "" || polkaAPIKey == "" {
 		log.Fatal("Missing env variable: JWT_SECRET")
 	}
 
@@ -44,6 +46,7 @@ func main() {
 		fileServerHits: atomic.Int32{},
 		db: *dbQueries,
 		jwtSecret: jwtSecret,
+		polkaAPIKey: polkaAPIKey,
 	}
 
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
