@@ -8,9 +8,10 @@ import (
 	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/auth"
 	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/database"
 	"github.com/google/uuid"
+	"github.com/julienschmidt/httprouter"
 )
 
-func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	token, err := auth.GetBearerToken(r.Header)
 
 	if err != nil {
@@ -51,19 +52,18 @@ func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, r *http.Request)
 	respondWithJSON(w, http.StatusCreated, chirp)
 }
 
-func (cfg *apiConfig) getChirpsHandler(w http.ResponseWriter, r *http.Request) {
-	chirpList, err := cfg.db.ListChirps(r.Context())
-	if err != nil {
-		respondWithError(w, 400, "Error fetching chirps")
-	}
-	respondWithJSON(w, 200, chirpList)
-}
+func (cfg *apiConfig) deleteChirpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	currentUserID, err := auth.AuthenticateUser(r, cfg.jwtSecret)
 
-func (cfg *apiConfig) getChirpHandler(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+		return
+	}
+
+	id := ps.ByName("id")
 	if id == "" {
-			respondWithError(w, http.StatusBadRequest, "Misisng Chirp ID")
-			return
+		respondWithError(w, http.StatusBadRequest, "Missing Chirp ID")
+		return
 	}
 	
 	parseUUID, err := uuid.Parse(id)
@@ -74,13 +74,56 @@ func (cfg *apiConfig) getChirpHandler(w http.ResponseWriter, r *http.Request) {
 
 	chirp, err := cfg.db.GetChirp(r.Context(), parseUUID)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid product ID")
+		respondWithError(w, http.StatusNotFound, http.StatusText(http.StatusNotFound))
+		return
+	}
+
+	if chirp.UserID != currentUserID {
+		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+		return
+	}
+
+	err = cfg.db.DeleteChirp(r.Context(), chirp.ID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		return
+	}
+
+	respondWithJSON(w, http.StatusNoContent, chirp.ID)
+}
+
+func (cfg *apiConfig) getChirpsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	chirpList, err := cfg.db.ListChirps(r.Context())
+	if err != nil {
+		respondWithError(w, 400, "Error fetching chirps")
+	}
+	respondWithJSON(w, 200, chirpList)
+}
+
+func (cfg *apiConfig) getChirpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	id := ps.ByName("id")
+	
+	if id == "" {
+		respondWithError(w, http.StatusBadRequest, "Missing Chirp ID")
+		return
+	}
+	
+	parseUUID, err := uuid.Parse(id)
+	if err !=  nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid Chirp ID")
+		return
+	}
+
+	chirp, err := cfg.db.GetChirp(r.Context(), parseUUID)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, http.StatusText(http.StatusNotFound))
 		return
 	}
 
 	respondWithJSON(w, 200, chirp)
 }
-func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
+
+func validateChirpHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	w.Header().Add("Content-Type", "application/json")
 
 	type parameters struct {

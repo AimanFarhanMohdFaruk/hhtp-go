@@ -6,9 +6,10 @@ import (
 
 	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/auth"
 	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/database"
+	"github.com/julienschmidt/httprouter"
 )
 
-func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	decoder := json.NewDecoder(r.Body)
 	type parameters struct {
 		Email string `json:"email"`
@@ -44,7 +45,7 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
-func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))

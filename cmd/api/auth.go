@@ -10,9 +10,10 @@ import (
 	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/auth"
 	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/database"
 	"github.com/google/uuid"
+	"github.com/julienschmidt/httprouter"
 )
 
-func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	decoder := json.NewDecoder(r.Body)
 	type parameters struct {
 		Email string `json:"email"`
@@ -78,7 +79,7 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (cfg *apiConfig) refreshTokenHandler(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) refreshTokenHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	refreshToken, err := auth.GetBearerToken(r.Header)
 	
 	if err != nil {
@@ -115,7 +116,7 @@ func (cfg *apiConfig) refreshTokenHandler(w http.ResponseWriter, r *http.Request
 	respondWithJSON(w, http.StatusOK, refreshTokenResponse{Token: newToken})
 }
 
-func (cfg *apiConfig) revokeRefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) revokeRefreshTokenHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	refreshToken, err := auth.GetBearerToken(r.Header)
 
 	if err != nil {

@@ -10,20 +10,21 @@ func (cfg *apiConfig) routes() *httprouter.Router{
 	router := httprouter.New()
 	
 	router.HandlerFunc(http.MethodGet, "/api/healthz", cfg.logHandler(readinessHandler))
-	router.HandlerFunc(http.MethodGet,"/admin/metrics", cfg.metricsHandler)
+	router.GET("/admin/metrics", cfg.metricsHandler)
 	
-	router.HandlerFunc(http.MethodPost,"/admin/reset", cfg.resetHandler)
-	router.HandlerFunc(http.MethodPost,"/api/validate_chirp", validateChirpHandler)
-	router.HandlerFunc(http.MethodPost,"/api/users", cfg.createUserHandler)
-	router.HandlerFunc(http.MethodPut, "/api/users", cfg.updateUserHandler)
+	router.POST("/admin/reset", cfg.resetHandler)
+	router.POST("/api/validate_chirp", validateChirpHandler)
+	router.POST("/api/users", cfg.createUserHandler)
+	router.PUT("/api/users", cfg.updateUserHandler)
 
-	router.HandlerFunc(http.MethodPost,"/api/login", cfg.loginHandler)
-	router.HandlerFunc(http.MethodPost,"/api/refresh", cfg.refreshTokenHandler)
-	router.HandlerFunc(http.MethodPost, "/api/revoke", cfg.revokeRefreshTokenHandler)
+	router.POST("/api/login", cfg.loginHandler)
+	router.POST("/api/refresh", cfg.refreshTokenHandler)
+	router.POST( "/api/revoke", cfg.revokeRefreshTokenHandler)
 
-	router.HandlerFunc(http.MethodPost, "/api/chirps", cfg.createChirpHandler)
-	router.HandlerFunc(http.MethodGet,"/api/chirps", cfg.getChirpsHandler)
-	router.HandlerFunc(http.MethodGet,"/api/chirps/:id", cfg.getChirpHandler)
+	router.POST("/api/chirps", cfg.createChirpHandler)
+	router.GET("/api/chirps", cfg.getChirpsHandler)
+	router.GET("/api/chirps/:id", cfg.getChirpHandler)
+	router.DELETE("/api/chirps/:id", cfg.deleteChirpHandler)
 
 	return router
 }

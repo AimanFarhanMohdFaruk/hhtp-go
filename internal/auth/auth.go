@@ -86,3 +86,17 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 
 	return uuid.MustParse(subject), nil
 }
+
+func AuthenticateUser(r *http.Request, jwtSecret string) (uuid.UUID, error) {
+	token, err := GetBearerToken(r.Header)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	userId, err := ValidateJWT(token, jwtSecret)
+
+	if err != nil {
+		return uuid.Nil, err
+	}
+	
+	return userId, nil
+}

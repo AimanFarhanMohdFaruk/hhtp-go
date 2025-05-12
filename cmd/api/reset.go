@@ -2,9 +2,11 @@ package main
 
 import (
 	"net/http"
+
+	"github.com/julienschmidt/httprouter"
 )
 
-func (cfg *apiConfig) resetHandler(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) resetHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	cfg.fileServerHits.Store(0)
 	users, err := cfg.db.ListUsers(r.Context())
 	if err != nil {
