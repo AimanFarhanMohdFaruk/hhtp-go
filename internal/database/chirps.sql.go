@@ -68,11 +68,12 @@ func (q *Queries) GetChirp(ctx context.Context, id uuid.UUID) (Chirp, error) {
 
 const listChirps = `-- name: ListChirps :many
 SELECT id, body, user_id, created_at, updated_at FROM chirps
+WHERE  (user_id=$1 OR $1 IS NULL)
 ORDER BY created_at
 `
 
-func (q *Queries) ListChirps(ctx context.Context) ([]Chirp, error) {
-	rows, err := q.db.QueryContext(ctx, listChirps)
+func (q *Queries) ListChirps(ctx context.Context, authorID uuid.NullUUID) ([]Chirp, error) {
+	rows, err := q.db.QueryContext(ctx, listChirps, authorID)
 	if err != nil {
 		return nil, err
 	}

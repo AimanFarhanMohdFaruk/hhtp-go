@@ -86,7 +86,14 @@ func (cfg *apiConfig) deleteChirpHandler(w http.ResponseWriter, r *http.Request,
 }
 
 func (cfg *apiConfig) getChirpsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	chirpList, err := cfg.db.ListChirps(r.Context())
+	query_params := r.URL.Query()
+	author_id, err := uuid.Parse(query_params.Get("author_id"))
+	
+	chirpList, err := cfg.db.ListChirps(r.Context(), uuid.NullUUID{
+		UUID: author_id,
+		Valid: err == nil,
+	})
+	
 	if err != nil {
 		respondWithError(w, 400, "Error fetching chirps")
 	}

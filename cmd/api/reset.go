@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -13,7 +14,7 @@ func (cfg *apiConfig) resetHandler(w http.ResponseWriter, r *http.Request, ps ht
 		respondWithError(w, http.StatusBadRequest, "Error fetching user lists")
 		return
 	}	
-	chirps, err := cfg.db.ListChirps(r.Context())
+	chirps, err := cfg.db.ListChirps(r.Context(), uuid.NullUUID{})
 
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Error fetching user lists")
