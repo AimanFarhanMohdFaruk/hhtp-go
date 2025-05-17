@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/AimanFarhanMohdFaruk/hhtp-go.git/internal/auth"
@@ -86,17 +87,28 @@ func (cfg *apiConfig) deleteChirpHandler(w http.ResponseWriter, r *http.Request,
 }
 
 func (cfg *apiConfig) getChirpsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	query_params := r.URL.Query()
-	author_id, err := uuid.Parse(query_params.Get("author_id"))
+	queryParams := r.URL.Query()
+	authorID, err := uuid.Parse(queryParams.Get("author_id"))
+	sortParams := queryParams.Get("sort")
 	
 	chirpList, err := cfg.db.ListChirps(r.Context(), uuid.NullUUID{
-		UUID: author_id,
+		UUID: authorID,
 		Valid: err == nil,
 	})
-	
+		
 	if err != nil {
 		respondWithError(w, 400, "Error fetching chirps")
 	}
+
+	if sortParams != "" {
+		if sortParams == "asc" {
+			sort.Slice(chirpList, func(i, j int) bool { return chirpList[i].CreatedAt.Time.Before(chirpList[j].CreatedAt.Time) })
+		}
+		if sortParams == "desc" {
+			sort.Slice(chirpList, func(i, j int) bool { return chirpList[i].CreatedAt.Time.After(chirpList[j].CreatedAt.Time) })
+		}
+	}
+	
 	respondWithJSON(w, 200, chirpList)
 }
 
